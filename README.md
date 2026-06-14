@@ -2,6 +2,9 @@
 
 Welcome to the **NLP Movie Chatbot & Cornell Corpus Explorer**, a full-stack, highly interactive chat application and Natural Language Processing (NLP) simulator. This application mimics Python's `ChatterBot` logic adapters, implements an NLTK/spaCy-like tokenization and syntax parsing pipeline, and lets users query and expand a dialogue corpus trained on the classic **Cornell Movie Dialogs Corpus**.
 
+### 🔗 Live Application
+- **Render Deployment**: [https://task-2-inib.onrender.com/](https://task-2-inib.onrender.com/)
+
 ---
 
 ## 📖 About the Project Details & Architecture
