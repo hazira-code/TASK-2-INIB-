@@ -4,6 +4,26 @@ Welcome to the **NLP Movie Chatbot & Cornell Corpus Explorer**, a full-stack, hi
 
 ---
 
+## 📖 About the Project Details & Architecture
+
+This engineering prototype bridges traditional rule-based Natural Language Processing with modern Generative Large Language Models. By implementing local heuristics that replicate python's `nltk` (Natural Language Toolkit) and `spaCy` frameworks alongside `ChatterBot`, users can physically inspect how human languages formulate under algorithmic lenses.
+
+### How the NLP Engine Works:
+1. **Sentence Segmenter & Tokenizer**: Takes string matrices and decomposes them into distinct syntactic units (Tokens), separating contractions and keeping proper punctuation boundaries intact.
+2. **Porter-Equivalent Lemmatization Heuristics**: Strips suffixes and processes irregular morphology to resolve base words (e.g. converting "flying" and "flew" to the common lemma "fly"). This levels the vocabulary playing field for mathematical similarity calculations.
+3. **Parts-of-Speech Tagging (POS)**: Categorizes tokens dynamically using unified Penn Treebank structures (e.g., separating standard nouns `NOUN` from proper naming nouns `PROPN` and action elements `VERB`).
+4. **Verb-Rooted Dependency Graph**: Builds a functional dependency tree. By locating the core action unit (`ROOT`), tokens are chained to parent heads as objects (`dobj`, `pobj`), nominative subjects (`nsubj`), or modifiers (`amod`, `advmod`, `det`), visible through the dynamic visualizer.
+5. **Named Entity Recognition (NER)**: Detects character names, places, and count structures through pattern-matching and lexical classification.
+
+### ChatterBot Matching Pipeline:
+Standard chatbots often treat conversation as unstructured generation. `ChatterBot` structures dialogue through **Logic Adapters**:
+- Every incoming prompt from the user is converted into standard base lemmas.
+- The engine computes a **Jaccard Coefficient** (a ratio of overlapping token vocabulary intersections relative to the total union of vocabulary tokens).
+- Concurrently, **Levenshtein Edit Distance** calculates the raw character-level edits (insertions, deletions, substitutions) needed to align the input with any seeded screenplay dialogs.
+- These scores are blended into a composite index. If it exceeds a matching threshold of `0.15`, the corresponding cinematic response is triggered. If not, the engine defaults to conversational grounding or invites on-the-fly training metrics.
+
+---
+
 ## 🚀 Key Features
 
 ### 1. Hybrid Conversational Engine
