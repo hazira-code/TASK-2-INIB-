@@ -48,6 +48,11 @@ Every chat message (and sandbox text) runs through our built-in NLP compiler to 
 - See step-by-step thinking stages calculated inside our custom server router.
 - Trace exactly how the Jaccard confidence indices computed, which film matched, and what threshold fallbacks were executed.
 
+### 5. Web Speech API Voice Recognition
+- **Microphone Translation Integration**: Click the microphone icon within the chat console to convert spoken words into text queries.
+- **Hands-Free Querying**: Ideal for dictating dialogue seeds (e.g., "What is the Matrix?") to immediately trigger matching algorithms.
+- **Robust Error Notifications**: Gracefully handles permissions status errors, unrecognized speech events, and is designed to comply with nested iframe security rules.
+
 ---
 
 ## 🛠️ Built With

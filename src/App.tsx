@@ -20,9 +20,16 @@ import {
   TrendingUp,
   BrainCircuit,
   MessageSquare,
-  Compass
+  Compass,
+  Mic,
+  MicOff
 } from 'lucide-react';
 import { ChatMessage, CorpusItem, NLPAnalysis, TokenInfo, DependencyNode } from './types';
+
+// Detect browser Web Speech Recognition capability
+const SpeechRecognition = typeof window !== 'undefined' 
+  ? ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)
+  : null;
 
 export default function App() {
   // Primary Chat States
@@ -44,6 +51,11 @@ export default function App() {
   const [activeEngine, setActiveEngine] = useState<'chatterbot' | 'gemini'>('chatterbot');
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<ChatMessage | null>(null);
+
+  // Web Speech API States
+  const [isListening, setIsListening] = useState(false);
+  const [speechError, setSpeechError] = useState<string | null>(null);
+  const recognitionRef = useRef<any>(null);
 
   // Corpus/Training Database States
   const [corpus, setCorpus] = useState<CorpusItem[]>([]);
@@ -83,6 +95,71 @@ export default function App() {
   useEffect(() => {
     handleSandboxAnalyze();
   }, []);
+
+  // Cleanup speech instance if active on unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
+
+  // Web Speech recognition toggle
+  const toggleListening = () => {
+    if (!SpeechRecognition) {
+      setSpeechError("Speech recognition is not supported in your browser.");
+      return;
+    }
+
+    if (isListening) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setIsListening(false);
+      return;
+    }
+
+    setSpeechError(null);
+    try {
+      const rec = new SpeechRecognition();
+      rec.continuous = false;
+      rec.interimResults = false;
+      rec.lang = 'en-US';
+
+      rec.onstart = () => {
+        setIsListening(true);
+      };
+
+      rec.onresult = (event: any) => {
+        const text = event.results[0][0].transcript;
+        if (text) {
+          setInputMessage(text);
+        }
+      };
+
+      rec.onerror = (event: any) => {
+        console.error("Speech Recognition Error:", event.error);
+        if (event.error === 'not-allowed') {
+          setSpeechError("Microphone permission denied.");
+        } else {
+          setSpeechError(`Speech Error: ${event.error}`);
+        }
+        setIsListening(false);
+      };
+
+      rec.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = rec;
+      rec.start();
+    } catch (err: any) {
+      console.error(err);
+      setSpeechError(`Failed to initialize: ${err.message || err}`);
+      setIsListening(false);
+    }
+  };
 
   const fetchCorpus = async () => {
     try {
@@ -503,29 +580,68 @@ export default function App() {
           </div>
 
           {/* Chat user action form */}
-          <form 
-            id="chat-input-form"
-            onSubmit={handleSendMessage} 
-            className="p-4 border-t border-zinc-900 bg-zinc-950 flex gap-2.5 items-center justify-between"
-          >
-            <input 
-              id="chat-input-text"
-              type="text"
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              placeholder={`Send dialog query (e.g. "What is the Matrix?")...`}
-              disabled={isGenerating}
-              className="flex-1 px-4 py-3 bg-zinc-900 border border-zinc-850 focus:border-amber-500 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-amber-500/20 disabled:opacity-60 placeholder-zinc-500"
-            />
-            <button 
-              id="chat-btn-submit"
-              type="submit"
-              disabled={isGenerating || !inputMessage.trim()}
-              className="px-4 py-3 bg-gradient-to-tr from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 font-semibold text-black rounded-xl cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition duration-200"
+          <div className="border-t border-zinc-900 bg-zinc-950/80 p-4 space-y-2">
+            {speechError && (
+              <div className="flex items-center gap-2 text-xs text-rose-400 bg-rose-950/20 border border-rose-900/40 px-3 py-1.5 rounded-lg font-mono">
+                <Info className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">{speechError}</span>
+                <button 
+                  type="button" 
+                  onClick={() => setSpeechError(null)} 
+                  className="ml-auto text-[10px] text-zinc-500 hover:text-white"
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
+            
+            <form 
+              id="chat-input-form"
+              onSubmit={handleSendMessage} 
+              className="flex gap-2.5 items-center justify-between"
             >
-              <Send className="w-4.5 h-4.5" />
-            </button>
-          </form>
+              <div className="relative flex-1 flex items-center">
+                <input 
+                  id="chat-input-text"
+                  type="text"
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  placeholder={isListening ? "Listening... Speak clearly now!" : `Send dialog query (e.g. "What is the Matrix?")...`}
+                  disabled={isGenerating}
+                  className="w-full pr-12 pl-4 py-3 bg-zinc-900 border border-zinc-850 focus:border-amber-500 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-amber-500/20 disabled:opacity-60 placeholder-zinc-500"
+                />
+                
+                {/* Audio Speech-to-Text Button */}
+                <button
+                  id="chat-btn-mic"
+                  type="button"
+                  onClick={toggleListening}
+                  disabled={isGenerating}
+                  title={isListening ? "Stop listening" : "Start speaking (Speech Recognition)"}
+                  className={`absolute right-3 p-2 rounded-lg transition-all duration-200 cursor-pointer ${
+                    isListening 
+                      ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30 animate-pulse scale-105' 
+                      : 'text-zinc-500 hover:text-zinc-200 hover:bg-zinc-805'
+                  }`}
+                >
+                  {isListening ? (
+                    <MicOff className="w-4 h-4" />
+                  ) : (
+                    <Mic className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+
+              <button 
+                id="chat-btn-submit"
+                type="submit"
+                disabled={isGenerating || !inputMessage.trim()}
+                className="px-4 py-3 bg-gradient-to-tr from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 font-semibold text-black rounded-xl cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition duration-200"
+              >
+                <Send className="w-4.5 h-4.5" />
+              </button>
+            </form>
+          </div>
 
         </section>
 

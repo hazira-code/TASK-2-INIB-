@@ -1,6 +1,6 @@
 {
   "name": "NLP Chatbot & Cornell Corpus Explorer",
   "description": "An interactive chatbot and natural language processing visualizer demonstrating ChatterBot, spaCy, NLTK-like pipelines, and Cornell Movie Dialogs corpus training.",
-  "requestFramePermissions": [],
+  "requestFramePermissions": ["microphone"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
